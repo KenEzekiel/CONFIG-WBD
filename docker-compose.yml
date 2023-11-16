@@ -1,0 +1,102 @@
+version: '3.9'
+
+services:
+  db:
+    image: mysql
+    container_name: db
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:?No password set}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-letterpaw_soap}
+      - MYSQL_USER=${MYSQL_USER:-soap_user}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:?No password set}
+    ports:
+      - ${DB_PORT:-3306}:3306
+    volumes:
+      - ./script:/docker-entrypoint-initdb.d/:ro
+      - mysql_data:/var/lib/mysql
+    networks:
+      - soap-network
+  soap:
+    image: soap-service-soap
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=host.docker.internal
+      - DB_PORT=${DB_PORT}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-letterpaw_soap}
+      - MYSQL_USER=${MYSQL_USER:-soap_user}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:?No password set}
+      - HOST=0.0.0.0
+      - PORT=${PORT}
+      - MAILER_HOST=${MAILER_HOST}
+      - MAILER_PORT=${MAILER_PORT}
+      - MAILER_USER=${MAILER_USER}
+      - MAILER_PASS=${MAILER_PASS}
+      - MAILER_FROM=${MAILER_FROM}
+      - PHP_API_KEY=${PHP_API_KEY}
+      - REST_API_KEY=${REST_API_KEY}
+    depends_on:
+      - db
+    ports:
+      - ${PORT:-7000}:7000
+    networks:
+      - soap-network
+  web:
+    container_name: client-spa-letterpaw-docker
+    env_file:
+      - .env
+    image: client-spa:latest
+    volumes:
+      - "/app/node_modules"
+    ports:
+      - 3000:3000
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+  php_web:
+    env_file:
+      - .env
+    container_name: tubes-1-letterpaw-php
+    image: tubes-1:latest
+    command: --default-authentification-plugin=mysql_native_password
+    depends_on:
+      - php_db
+    ports:
+      - 8008:80
+    environment:
+      - MYSQL_ROOT_PASSWORD=${password}
+      - MYSQL_DATABASE=mysql_database
+      - MYSQL_USER=${nama}
+      - MYSQL_PASSWORD=${password}
+      - USE_DOCKER_CONFIG=true
+    volumes:
+      - .:/var/www/html/
+  php_db:
+    env_file:
+      - .env
+    container_name: tubes-1-database-php
+    image: mysql:latest
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${password}
+      - MYSQL_DATABASE=mysql_database
+      - MYSQL_USER=${nama}
+      - MYSQL_PASSWORD=${password}
+      - USE_DOCKER_CONFIG=true
+    ports:
+      - "9907:3307"
+  phpmyadmin:
+    container_name: tubes-1-phpmyadmin-php
+    image: phpmyadmin/phpmyadmin
+    depends_on:
+      - php_db
+    environment:
+      PMA_HOST: php_db
+    restart: unless-stopped
+    ports:
+      - "8088:80"
+volumes:
+  mysql_data:
+networks:
+  soap-network:
