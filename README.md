@@ -4,6 +4,6 @@ Make sure to build all docker images before running `docker-compose up`
 
 `docker build -t [image name] .` in each respective repository
 
-tubes-1:latest
+php-app
 soap-service-soap
 client-spa:latest

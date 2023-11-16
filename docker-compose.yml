@@ -13,7 +13,7 @@ services:
     ports:
       - ${DB_PORT:-3306}:3306
     volumes:
-      - ./script:/docker-entrypoint-initdb.d/:ro
+      - /docker-entrypoint-initdb.d
       - mysql_data:/var/lib/mysql
     networks:
       - soap-network
@@ -47,8 +47,6 @@ services:
     env_file:
       - .env
     image: client-spa:latest
-    volumes:
-      - "/app/node_modules"
     ports:
       - 3000:3000
     environment:
@@ -57,11 +55,11 @@ services:
   php_web:
     env_file:
       - .env
-    container_name: tubes-1-letterpaw-php
-    image: tubes-1:latest
+    container_name: letterpaw-php-app
+    image: php-app
     command: --default-authentification-plugin=mysql_native_password
     depends_on:
-      - php_db
+      - php-db
     ports:
       - 8008:80
     environment:
@@ -70,12 +68,11 @@ services:
       - MYSQL_USER=${nama}
       - MYSQL_PASSWORD=${password}
       - USE_DOCKER_CONFIG=true
-    volumes:
-      - .:/var/www/html/
-  php_db:
+      - DB_HOST=php-db
+  php-db:
     env_file:
       - .env
-    container_name: tubes-1-database-php
+    container_name: database-php-app
     image: mysql:latest
     restart: unless-stopped
     environment:
@@ -86,13 +83,15 @@ services:
       - USE_DOCKER_CONFIG=true
     ports:
       - "9907:3307"
+    volumes:
+      - ./script/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql 
   phpmyadmin:
-    container_name: tubes-1-phpmyadmin-php
+    container_name: phpmyadmin-php-app
     image: phpmyadmin/phpmyadmin
     depends_on:
-      - php_db
+      - php-db
     environment:
-      PMA_HOST: php_db
+      PMA_HOST: php-db
     restart: unless-stopped
     ports:
       - "8088:80"
