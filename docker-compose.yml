@@ -28,7 +28,7 @@ services:
       - MYSQL_USER=${MYSQL_USER:-soap_user}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD:?No password set}
       - HOST=0.0.0.0
-      - PORT=${PORT}
+      - PORT=${SOAP_PORT}
       - MAILER_HOST=${MAILER_HOST}
       - MAILER_PORT=${MAILER_PORT}
       - MAILER_USER=${MAILER_USER}
@@ -39,7 +39,7 @@ services:
     depends_on:
       - db
     ports:
-      - ${PORT:-7000}:7000
+      - 7000:7000
     networks:
       - soap-network
   web:
@@ -95,7 +95,37 @@ services:
     restart: unless-stopped
     ports:
       - "8088:80"
+  db-rest:
+    container_name: rest-database
+    image: mysql:5.7
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=db-rest
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+    volumes:
+      - ./prisma/migration.sql:/docker-entrypoint-initdb.d/migration.sql
+    ports:
+      - '3316:3306'
+    env_file:
+     - .env
+    networks:
+      - rest-network
+  rest:
+    depends_on:
+      - db-rest
+    image: rest-service-rest
+    ports:
+      - '8080:8080'
+    environment:
+      - DATABASE_HOST=db-rest
+      - DATABASE_URL=mysql://user:password@db-rest:3306/db-rest
+    networks:
+      - rest-network
 volumes:
   mysql_data:
+  db_data:
 networks:
   soap-network:
+  rest-network:

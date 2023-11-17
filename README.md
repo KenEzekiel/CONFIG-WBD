@@ -7,3 +7,4 @@ Make sure to build all docker images before running `docker-compose up`
 php-app
 soap-service-soap
 client-spa:latest
+rest-service-rest
