@@ -117,7 +117,7 @@ services:
       - db-rest
     image: rest-service-rest
     ports:
-      - '8080:8080'
+      - '8000:8000'
     environment:
       - DATABASE_HOST=db-rest
       - DATABASE_URL=mysql://user:password@db-rest:3306/db-rest
